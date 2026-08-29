@@ -20,6 +20,7 @@ python biopharma-intelligence/scripts/update_tracker.py
 - `biopharma-intelligence/data/trial_changes.json`
 - `biopharma-intelligence/data/raw/`中的可追溯原始快照
 - `biopharma-intelligence/weekly-reports/generated/YYYY-MM-DD.md`
+- `biopharma-intelligence/screening/asreview_input.csv`，可导入ASReview进行主动学习筛选
 
 首次运行时，全部试验会标记为`new`；第二次及以后才会识别状态、入组数、阶段、主要完成日期、干预措施和主要终点的变化。
 
@@ -31,3 +32,7 @@ python biopharma-intelligence/scripts/update_tracker.py
 - `NCBI_API_KEY`：可选；提高NCBI API请求限额
 
 自动生成的是“候选周报”，保留人工解读位置。标题或注册字段不足以支持疗效、安全性或项目成败判断，因此当前版本不会自动编造临床结论。
+
+### ASReview个性化筛选
+
+打开`biopharma-intelligence/screening/README.md`，将自动生成的`asreview_input.csv`导入ASReview LAB。你只需持续标记相关或不相关记录，主动学习模型会逐步优先展示更符合你学习目标的文章和临床试验变化。
