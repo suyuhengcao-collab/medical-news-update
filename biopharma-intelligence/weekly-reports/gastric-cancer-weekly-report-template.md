@@ -1,3 +1,23 @@
+---
+indication:
+  - gastric cancer
+  - gastroesophageal junction cancer
+
+targets:
+  - CLDN18.2
+  - HER2
+  - FGFR2b
+  - PD-1
+  - TROP2
+
+events:
+  - phase 3 initiation
+  - primary endpoint result
+  - regulatory approval
+  - trial termination
+  - licensing deal
+---
+
 # 胃癌创新药跟踪
 
 > 模板：用于每周更新胃癌相关的新药研发进展、临床试验和行业动态。
