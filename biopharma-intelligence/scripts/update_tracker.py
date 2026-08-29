@@ -26,6 +26,7 @@ CONFIG_PATH = ROOT / "config" / "tracking.json"
 DATA_DIR = ROOT / "data"
 RAW_DIR = DATA_DIR / "raw"
 REPORT_DIR = ROOT / "weekly-reports" / "generated"
+SCREENING_DIR = ROOT / "screening"
 USER_AGENT = "gastric-cancer-tracker/0.1 (public biomedical evidence tracker)"
 
 
@@ -255,11 +256,70 @@ def render_report(publications: list[dict[str, str]], trials: list[dict[str, str
     return "\n".join(lines)
 
 
+def write_asreview_input(
+    path: Path,
+    publications: list[dict[str, str]],
+    trials: list[dict[str, str]],
+    trial_changes: list[dict[str, Any]],
+) -> None:
+    """Write a UTF-8 CSV compatible with ASReview LAB 3.
+
+    ASReview requires a title or abstract and recognizes doi, url, keywords,
+    and included. Extra metadata columns remain available after export.
+    """
+    changed_ids = {item["id"] for item in trial_changes}
+    rows: list[dict[str, str]] = []
+    for item in publications:
+        rows.append(
+            {
+                "record_id": f"PMID:{item['pmid']}",
+                "title": item["title"],
+                "abstract": item["abstract"],
+                "keywords": "publication; PubMed; gastric cancer; drug development",
+                "doi": item["doi"],
+                "url": item["source_url"],
+                "source_type": "publication",
+                "included": "",
+            }
+        )
+    for trial in trials:
+        if trial["nct_id"] not in changed_ids:
+            continue
+        summary = (
+            f"Phase: {trial['phase'] or 'not reported'}. "
+            f"Status: {trial['overall_status'] or 'not reported'}. "
+            f"Sponsor: {trial['sponsor'] or 'not reported'}. "
+            f"Interventions: {trial['interventions'] or 'not reported'}. "
+            f"Primary outcomes: {trial['primary_outcomes'] or 'not reported'}. "
+            f"Enrollment: {trial['enrollment'] or 'not reported'}. "
+            f"Primary completion: {trial['primary_completion'] or 'not reported'}."
+        )
+        rows.append(
+            {
+                "record_id": trial["nct_id"],
+                "title": trial["brief_title"],
+                "abstract": summary,
+                "keywords": "clinical trial; ClinicalTrials.gov; gastric cancer; trial update",
+                "doi": "",
+                "url": trial["source_url"],
+                "source_type": "clinical_trial_change",
+                "included": "",
+            }
+        )
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fieldnames = ["record_id", "title", "abstract", "keywords", "doi", "url", "source_type", "included"]
+    with path.open("w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+
+
 def main() -> int:
     config = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     RAW_DIR.mkdir(parents=True, exist_ok=True)
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
+    SCREENING_DIR.mkdir(parents=True, exist_ok=True)
     publications_path = DATA_DIR / "publications.csv"
     trials_path = DATA_DIR / "trials.csv"
     previous_trials = load_previous(trials_path, "nct_id")
@@ -275,7 +335,10 @@ def main() -> int:
     (DATA_DIR / "trial_changes.json").write_text(json.dumps(trial_changes, ensure_ascii=False, indent=2), encoding="utf-8")
     report_path = REPORT_DIR / f"{date.today().isoformat()}.md"
     report_path.write_text(render_report(publications, trials, trial_changes), encoding="utf-8")
+    asreview_path = SCREENING_DIR / "asreview_input.csv"
+    write_asreview_input(asreview_path, publications, trials, trial_changes)
     print(f"Generated {report_path.relative_to(ROOT)}")
+    print(f"Generated {asreview_path.relative_to(ROOT)}")
     return 0
 
 
