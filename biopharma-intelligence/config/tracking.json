@@ -1,0 +1,11 @@
+{
+  "indications": [
+    "gastric cancer",
+    "gastric adenocarcinoma",
+    "gastroesophageal junction cancer"
+  ],
+  "targets": ["CLDN18.2", "HER2", "FGFR2B", "PD-1", "PD-L1", "TROP2", "MET"],
+  "lookback_days": 14,
+  "max_pubmed_records": 100,
+  "max_trial_records": 100
+}
